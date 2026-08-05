@@ -85,7 +85,6 @@ fn check_elevated() -> bool {
     }
     #[cfg(windows)]
     {
-        use windows::Win32::Foundation::HANDLE;
         // Check if current token has admin group
         is_admin_windows().unwrap_or(false)
     }
