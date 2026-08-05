@@ -98,11 +98,12 @@ fn check_elevated() -> bool {
 fn is_admin_windows() -> Option<bool> {
     use windows::Win32::Foundation::*;
     use windows::Win32::Security::*;
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
     unsafe {
         let mut elevated = BOOL(0);
         let mut token = HANDLE::default();
         if OpenProcessToken(
-            windows::Win32::System::Threading::GetCurrentProcess(),
+            GetCurrentProcess(),
             TOKEN_QUERY,
             &mut token,
         )
