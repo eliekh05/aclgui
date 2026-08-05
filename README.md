@@ -143,26 +143,6 @@ aclgui/
 
 ---
 
-## Release process
-
-Tagging a commit triggers the release workflow:
-
-```sh
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The workflow:
-1. Cross-compiles for all 5 targets in parallel.
-2. Creates a GitHub Release with all binaries attached.
-3. Stamps per-platform npm packages from the artifacts.
-4. Publishes `@aclgui/darwin-arm64`, `@aclgui/linux-x64`, etc. first.
-5. Publishes the `aclgui` metapackage last.
-
-Set the `NPM_TOKEN` secret in your repository settings before the first release.
-
----
-
 ## License
 
 MIT
