@@ -85,7 +85,6 @@ fn check_elevated() -> bool {
     }
     #[cfg(windows)]
     {
-        use windows::Win32::Security;
         use windows::Win32::Foundation::HANDLE;
         // Check if current token has admin group
         is_admin_windows().unwrap_or(false)
@@ -98,9 +97,8 @@ fn check_elevated() -> bool {
 
 #[cfg(windows)]
 fn is_admin_windows() -> Option<bool> {
-    use windows::Win32::Security::Authorization::*;
-    use windows::Win32::Security::*;
     use windows::Win32::Foundation::*;
+    use windows::Win32::Security::*;
     unsafe {
         let mut elevated = BOOL(0);
         let mut token = HANDLE::default();
@@ -108,7 +106,9 @@ fn is_admin_windows() -> Option<bool> {
             windows::Win32::System::Threading::GetCurrentProcess(),
             TOKEN_QUERY,
             &mut token,
-        ).is_ok() {
+        )
+        .is_ok()
+        {
             let mut elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
             let mut len = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
             let _ = GetTokenInformation(
