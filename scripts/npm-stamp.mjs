@@ -48,11 +48,11 @@ function parseArgs() {
 function stampPlatform(p, { version, binaries, out }) {
   const src = join(binaries, p.bin);
   if (!existsSync(src)) {
-    console.warn(`  skip @aclgui/${p.os}-${p.cpu}: binary not found (${src})`);
+    console.warn(`  skip @aclgui_eliekh05/${p.os}-${p.cpu}: binary not found (${src})`);
     return false;
   }
 
-  const pkgName = `@aclgui/${p.os}-${p.cpu}`;
+  const pkgName = `@aclgui_eliekh05/${p.os}-${p.cpu}`;
   const pkgDir  = join(out, `${p.os}-${p.cpu}`);
   mkdirSync(join(pkgDir, 'bin'), { recursive: true });
 
@@ -64,7 +64,7 @@ function stampPlatform(p, { version, binaries, out }) {
     version,
     description: `aclgui prebuilt binary for ${p.os}-${p.cpu}`,
     license:     'MIT',
-    repository:  { type: 'git', url: 'https://github.com/eliekhalil/aclgui.git' },
+    repository:  { type: 'git', url: 'https://github.com/eliekh05/aclgui.git' },
     os:          [p.os],
     cpu:         [p.cpu],
     files:       ['bin/'],
@@ -85,7 +85,7 @@ function stampMeta({ version, out }) {
   chmodSync(join(metaOut, 'bin', 'aclgui.js'), 0o755);
 
   const optDeps = Object.fromEntries(
-    PLATFORMS.map(p => [`@aclgui/${p.os}-${p.cpu}`, version])
+    PLATFORMS.map(p => [`@aclgui_eliekh05/${p.os}-${p.cpu}`, version])
   );
 
   writeFileSync(join(metaOut, 'package.json'), JSON.stringify({
@@ -94,7 +94,7 @@ function stampMeta({ version, out }) {
     description:          'Cross-platform ACL & permissions GUI — Windows, macOS, Linux',
     keywords:             ['acl', 'permissions', 'security', 'gui', 'chmod', 'icacls', 'setfacl'],
     license:              'MIT',
-    repository:           { type: 'git', url: 'https://github.com/eliekhalil/aclgui.git' },
+    repository:           { type: 'git', url: 'https://github.com/eliekh05/aclgui.git' },
     type:                 'module',
     bin:                  { aclgui: 'bin/aclgui.js' },
     files:                ['bin/'],

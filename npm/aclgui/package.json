@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eliekhalil/aclgui.git"
+    "url": "https://github.com/eliekh05/aclgui.git"
   },
   "type": "module",
   "bin": {
@@ -18,10 +18,10 @@
     "bin-shim": "^0.1.0"
   },
   "optionalDependencies": {
-    "@aclgui/darwin-arm64": "0.1.0",
-    "@aclgui/darwin-x64":   "0.1.0",
-    "@aclgui/linux-x64":    "0.1.0",
-    "@aclgui/linux-arm64":  "0.1.0",
-    "@aclgui/win32-x64":    "0.1.0"
+    "@aclgui_eliekh05/darwin-arm64": "0.1.0",
+    "@aclgui_eliekh05/darwin-x64":   "0.1.0",
+    "@aclgui_eliekh05/linux-x64":    "0.1.0",
+    "@aclgui_eliekh05/linux-arm64":  "0.1.0",
+    "@aclgui_eliekh05/win32-x64":    "0.1.0"
   }
 }
