@@ -1,0 +1,24 @@
+[package]
+name = "acl-core"
+version = "0.1.0"
+edition = "2021"
+description = "Cross-platform ACL parsing and application library"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Storage_FileSystem",
+    "Win32_Foundation",
+    "Win32_System_Threading",
+    "Win32_System_Memory",
+] }

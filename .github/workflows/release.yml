@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+  id-token: write   # for npm provenance
+
+jobs:
+  # ── Build binaries for each target ─────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-latest
+            bin_name: aclgui-darwin-arm64
+          - target: x86_64-apple-darwin
+            runner: macos-latest
+            bin_name: aclgui-darwin-x64
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            bin_name: aclgui-linux-x64
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+            bin_name: aclgui-linux-arm64
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            bin_name: aclgui-win32-x64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust + target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install Linux cross-compilation tools
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libgtk-3-dev libxcb-render0-dev libxcb-shape0-dev \
+            libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev libssl-dev \
+            gcc-aarch64-linux-gnu
+
+      - name: Build (release)
+        run: cargo build --release --target ${{ matrix.target }}
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cp target/${{ matrix.target }}/release/aclgui ${{ matrix.bin_name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item target/${{ matrix.target }}/release/aclgui.exe ${{ matrix.bin_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.bin_name }}
+          path: ${{ matrix.bin_name }}
+          if-no-files-found: error
+
+  # ── Create GitHub Release ───────────────────────────────────────────────────
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/binaries
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/binaries/*
+          generate_release_notes: true
+
+  # ── Publish to npm ──────────────────────────────────────────────────────────
+  npm-publish:
+    name: Publish to npm
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/binaries
+          merge-multiple: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Stamp npm packages
+        run: node scripts/npm-stamp.mjs --version=${{ steps.version.outputs.version }} --binaries=dist/binaries --out=dist/npm
+
+      - name: Install bin-shim in metapackage
+        working-directory: dist/npm/aclgui
+        run: npm install --ignore-scripts
+
+      - name: Publish platform packages
+        run: |
+          for dir in dist/npm/darwin-arm64 dist/npm/darwin-x64 \
+                     dist/npm/linux-x64 dist/npm/linux-arm64 dist/npm/win32-x64; do
+            [ -d "$dir" ] && npm publish "$dir" --access=public --provenance
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish metapackage
+        run: npm publish dist/npm/aclgui --access=public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
