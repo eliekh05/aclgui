@@ -89,7 +89,7 @@ function stampMeta({ version, out }) {
   );
 
   writeFileSync(join(metaOut, 'package.json'), JSON.stringify({
-    name:                 'aclgui',
+    name:                 '@eliekh05/aclgui',
     version,
     description:          'Cross-platform ACL & permissions GUI — Windows, macOS, Linux',
     keywords:             ['acl', 'permissions', 'security', 'gui', 'chmod', 'icacls', 'setfacl'],
