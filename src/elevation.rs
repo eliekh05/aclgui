@@ -8,15 +8,13 @@ pub fn relaunch_elevated() -> Result<(), String> {
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
         // ShellExecuteEx with "runas" verb triggers UAC
         Command::new("powershell")
             .args([
-                "-NoProfile", "-NonInteractive", "-Command",
-                &format!(
-                    "Start-Process -FilePath '{}' -Verb RunAs",
-                    exe.display()
-                ),
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                &format!("Start-Process -FilePath '{}' -Verb RunAs", exe.display()),
             ])
             .spawn()
             .map_err(|e| e.to_string())?;
@@ -27,14 +25,20 @@ pub fn relaunch_elevated() -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         let display = std::env::var("DISPLAY").unwrap_or_default();
-        let xauth   = std::env::var("XAUTHORITY").unwrap_or_default();
-        let home    = std::env::var("HOME").unwrap_or_default();
+        let xauth = std::env::var("XAUTHORITY").unwrap_or_default();
+        let home = std::env::var("HOME").unwrap_or_default();
 
         let mut cmd = Command::new("pkexec");
         cmd.arg("env");
-        if !display.is_empty() { cmd.arg(format!("DISPLAY={display}")); }
-        if !xauth.is_empty()   { cmd.arg(format!("XAUTHORITY={xauth}")); }
-        if !home.is_empty()    { cmd.arg(format!("HOME={home}")); }
+        if !display.is_empty() {
+            cmd.arg(format!("DISPLAY={display}"));
+        }
+        if !xauth.is_empty() {
+            cmd.arg(format!("XAUTHORITY={xauth}"));
+        }
+        if !home.is_empty() {
+            cmd.arg(format!("HOME={home}"));
+        }
         cmd.arg(exe);
         cmd.spawn().map_err(|e| e.to_string())?;
         std::process::exit(0);
