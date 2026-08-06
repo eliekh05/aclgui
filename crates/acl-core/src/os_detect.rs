@@ -35,18 +35,16 @@ pub struct ToolAvailability {
 }
 
 fn has_tool(name: &str) -> bool {
-    Command::new("which")
+    #[cfg(windows)]
+    let checker = "where";
+    #[cfg(not(windows))]
+    let checker = "which";
+
+    Command::new(checker)
         .arg(name)
         .output()
         .map(|o| o.status.success())
-        .unwrap_or_else(|_| {
-            // On Windows, try `where`
-            Command::new("where")
-                .arg(name)
-                .output()
-                .map(|o| o.status.success())
-                .unwrap_or(false)
-        })
+        .unwrap_or(false)
 }
 
 pub fn probe_tools() -> ToolAvailability {
@@ -102,13 +100,7 @@ fn is_admin_windows() -> Option<bool> {
     unsafe {
         let mut elevated = BOOL(0);
         let mut token = HANDLE::default();
-        if OpenProcessToken(
-            GetCurrentProcess(),
-            TOKEN_QUERY,
-            &mut token,
-        )
-        .is_ok()
-        {
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_ok() {
             let mut elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
             let mut len = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
             let _ = GetTokenInformation(

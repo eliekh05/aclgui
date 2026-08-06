@@ -41,12 +41,10 @@ pub fn draw(app: &mut AclApp, ui: &mut egui::Ui) {
         );
         let send = ui.button("Send");
         if send.clicked()
-            || (input_response.lost_focus()
-                && ui.input(|i| i.key_pressed(egui::Key::Enter)))
+            || (input_response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)))
         {
             app.send_chat();
+            input_response.request_focus();
         }
-        // Keep focus on input after send
-        input_response.request_focus();
     });
 }

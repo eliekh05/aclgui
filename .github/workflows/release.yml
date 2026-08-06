@@ -129,10 +129,6 @@ jobs:
       - name: Stamp npm packages
         run: node scripts/npm-stamp.mjs --version=${{ steps.version.outputs.version }} --binaries=dist/binaries --out=dist/npm
 
-      - name: Install bin-shim in metapackage
-        working-directory: dist/npm/aclgui
-        run: npm install --ignore-scripts
-
       - name: Publish platform packages
         run: |
           for dir in dist/npm/darwin-arm64 dist/npm/darwin-x64 \

@@ -2,7 +2,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::model::*;
-use crate::os_detect::{Os, ToolAvailability, current_os, path_has_nfs4_acl};
+use crate::os_detect::{current_os, path_has_nfs4_acl, Os, ToolAvailability};
 
 /// Parse the ACL/permissions for a given path.
 pub fn read_path(path: &Path, tools: &ToolAvailability) -> PathAcl {
@@ -56,8 +56,12 @@ fn read_posix_mode_only(path: &Path, acl: &mut PathAcl) {
             acl.posix_mode = Some(PosixMode::from_octal(octal));
         }
     }
-    if parts.len() > 1 { acl.owner = Some(parts[1].into()); }
-    if parts.len() > 2 { acl.group = Some(parts[2].into()); }
+    if parts.len() > 1 {
+        acl.owner = Some(parts[1].into());
+    }
+    if parts.len() > 2 {
+        acl.group = Some(parts[2].into());
+    }
 }
 
 // ─── POSIX ACL (getfacl) ──────────────────────────────────────────────────────
@@ -90,13 +94,21 @@ fn parse_getfacl_output(text: &str, acl: &mut PathAcl) {
             }
             continue;
         }
-        if line.is_empty() { continue; }
+        if line.is_empty() {
+            continue;
+        }
 
         let is_default = line.starts_with("default:");
-        let entry = if is_default { &line["default:".len()..] } else { line };
+        let entry = if is_default {
+            &line["default:".len()..]
+        } else {
+            line
+        };
 
         let parts: Vec<&str> = entry.splitn(3, ':').collect();
-        if parts.len() < 2 { continue; }
+        if parts.len() < 2 {
+            continue;
+        }
 
         let (kind, name, perms_str) = match parts.len() {
             3 => (parts[0], parts[1], parts[2]),
@@ -106,10 +118,10 @@ fn parse_getfacl_output(text: &str, acl: &mut PathAcl) {
 
         let principal = match kind {
             "user" if name.is_empty() => Principal::Owner,
-            "user"  => Principal::User(name.into()),
+            "user" => Principal::User(name.into()),
             "group" if name.is_empty() => Principal::OwningGroup,
             "group" => Principal::Group(name.into()),
-            "mask"  => Principal::Mask,
+            "mask" => Principal::Mask,
             "other" => Principal::Other,
             _ => continue,
         };
@@ -139,8 +151,8 @@ fn parse_getfacl_output(text: &str, acl: &mut PathAcl) {
 fn parse_rwx(s: &str) -> Rights {
     let chars: Vec<char> = s.chars().collect();
     Rights {
-        read:    chars.first().copied().unwrap_or('-') == 'r',
-        write:   chars.get(1).copied().unwrap_or('-') == 'w',
+        read: chars.first().copied().unwrap_or('-') == 'r',
+        write: chars.get(1).copied().unwrap_or('-') == 'w',
         execute: chars.get(2).copied().unwrap_or('-') == 'x',
         ..Default::default()
     }
@@ -151,18 +163,18 @@ fn build_posix_mode_from_aces(acl: &mut PathAcl) {
     for ace in &acl.aces {
         match &ace.principal {
             Principal::Owner => {
-                mode.owner_read    = ace.rights.read;
-                mode.owner_write   = ace.rights.write;
+                mode.owner_read = ace.rights.read;
+                mode.owner_write = ace.rights.write;
                 mode.owner_execute = ace.rights.execute;
             }
             Principal::OwningGroup => {
-                mode.group_read    = ace.rights.read;
-                mode.group_write   = ace.rights.write;
+                mode.group_read = ace.rights.read;
+                mode.group_write = ace.rights.write;
                 mode.group_execute = ace.rights.execute;
             }
             Principal::Other => {
-                mode.other_read    = ace.rights.read;
-                mode.other_write   = ace.rights.write;
+                mode.other_read = ace.rights.read;
+                mode.other_write = ace.rights.write;
                 mode.other_execute = ace.rights.execute;
             }
             _ => {}
@@ -184,21 +196,28 @@ fn read_macos(path: &Path, acl: &mut PathAcl) {
         let s = String::from_utf8_lossy(&o.stdout);
         let parts: Vec<&str> = s.trim().split_whitespace().collect();
         if let Some(octal_str) = parts.first() {
-            if let Ok(full) = u32::from_str_radix(octal_str.trim_start_matches("0o"), 8) {
+            if let Ok(full) = octal_str.parse::<u32>() {
                 acl.posix_mode = Some(PosixMode::from_octal(full & 0o7777));
             }
         }
-        if parts.len() > 1 { acl.owner = Some(parts[1].into()); }
-        if parts.len() > 2 { acl.group = Some(parts[2].into()); }
+        if parts.len() > 1 {
+            acl.owner = Some(parts[1].into());
+        }
+        if parts.len() > 2 {
+            acl.group = Some(parts[2].into());
+        }
     }
 
     // Get ACL entries
     let out = Command::new("ls")
-        .args(["-led", "--", path.to_str().unwrap_or("")])
+        .args(["-led", path.to_str().unwrap_or("")])
         .output();
     let out = match out {
         Ok(o) => o,
-        Err(e) => { acl.error = Some(e.to_string()); return; }
+        Err(e) => {
+            acl.error = Some(e.to_string());
+            return;
+        }
     };
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     acl.raw_output = text.clone();
@@ -211,7 +230,9 @@ fn parse_ls_le_output(text: &str, acl: &mut PathAcl) {
     // " 0: user:alice inherited allow read"
     for line in text.lines().skip(1) {
         let line = line.trim();
-        if line.is_empty() { continue; }
+        if line.is_empty() {
+            continue;
+        }
         // Strip leading index like "0: "
         let entry = if let Some(pos) = line.find(':') {
             line[pos + 1..].trim()
@@ -221,16 +242,28 @@ fn parse_ls_le_output(text: &str, acl: &mut PathAcl) {
 
         // Split on whitespace: principal [inherited] allow|deny perms
         let tokens: Vec<&str> = entry.split_whitespace().collect();
-        if tokens.len() < 3 { continue; }
+        if tokens.len() < 3 {
+            continue;
+        }
 
         let mut idx = 0;
-        let principal_str = tokens[idx]; idx += 1;
+        let principal_str = tokens[idx];
+        idx += 1;
         let inherited = if tokens.get(idx).copied() == Some("inherited") {
-            idx += 1; true
-        } else { false };
+            idx += 1;
+            true
+        } else {
+            false
+        };
         let allow = match tokens.get(idx) {
-            Some(&"allow") => { idx += 1; true }
-            Some(&"deny")  => { idx += 1; false }
+            Some(&"allow") => {
+                idx += 1;
+                true
+            }
+            Some(&"deny") => {
+                idx += 1;
+                false
+            }
             _ => continue,
         };
         let perms_str = tokens[idx..].join(",");
@@ -245,7 +278,7 @@ fn parse_ls_le_output(text: &str, acl: &mut PathAcl) {
             inherit: InheritFlags {
                 inherited,
                 file_inherit: perms_str.contains("file_inherit"),
-                dir_inherit:  perms_str.contains("directory_inherit"),
+                dir_inherit: perms_str.contains("directory_inherit"),
                 ..Default::default()
             },
             is_default: false,
@@ -268,20 +301,20 @@ fn parse_macos_principal(s: &str) -> Principal {
 fn parse_macos_perms(s: &str) -> Rights {
     let has = |k: &str| s.split(',').any(|p| p.trim() == k);
     Rights {
-        read:          has("read") || has("read_data"),
-        write:         has("write") || has("write_data"),
-        execute:       has("execute"),
-        delete:        has("delete"),
-        append:        has("append_data"),
-        read_attr:     has("read_attributes") || has("read_attr"),
-        write_attr:    has("write_attributes") || has("write_attr"),
-        read_xattr:    has("read_extattributes"),
-        write_xattr:   has("write_extattributes"),
+        read: has("read") || has("read_data"),
+        write: has("write") || has("write_data"),
+        execute: has("execute"),
+        delete: has("delete"),
+        append: has("append_data"),
+        read_attr: has("read_attributes") || has("read_attr"),
+        write_attr: has("write_attributes") || has("write_attr"),
+        read_xattr: has("read_extattributes"),
+        write_xattr: has("write_extattributes"),
         read_security: has("read_security"),
-        write_security:has("write_security"),
-        create_file:   has("add_file"),
-        create_dir:    has("add_subdirectory"),
-        list:          has("list_directory"),
+        write_security: has("write_security"),
+        create_file: has("add_file"),
+        create_dir: has("add_subdirectory"),
+        list: has("list_directory"),
         ..Default::default()
     }
 }
@@ -295,7 +328,10 @@ fn read_nfs4(path: &Path, acl: &mut PathAcl) {
         .output();
     let out = match out {
         Ok(o) => o,
-        Err(e) => { acl.error = Some(e.to_string()); return; }
+        Err(e) => {
+            acl.error = Some(e.to_string());
+            return;
+        }
     };
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     acl.raw_output = text.clone();
@@ -308,18 +344,22 @@ fn parse_nfs4_output(text: &str, acl: &mut PathAcl) {
     //        D:g:GROUP@:waxTC
     for line in text.lines() {
         let line = line.trim();
-        if line.starts_with('#') || line.is_empty() { continue; }
+        if line.starts_with('#') || line.is_empty() {
+            continue;
+        }
         let parts: Vec<&str> = line.splitn(4, ':').collect();
-        if parts.len() < 4 { continue; }
+        if parts.len() < 4 {
+            continue;
+        }
         let ace_type = parts[0];
-        let flags    = parts[1];
+        let flags = parts[1];
         let principal_str = parts[2];
-        let perms    = parts[3];
+        let perms = parts[3];
 
         let allow = ace_type == "A";
         let principal = match principal_str {
-            "OWNER@"    => Principal::Owner,
-            "GROUP@"    => Principal::OwningGroup,
+            "OWNER@" => Principal::Owner,
+            "GROUP@" => Principal::OwningGroup,
             "EVERYONE@" => Principal::Everyone,
             other => {
                 if flags.contains('g') {
@@ -346,29 +386,29 @@ fn parse_nfs4_output(text: &str, acl: &mut PathAcl) {
 fn parse_nfs4_perms(s: &str) -> Rights {
     let has = |c: char| s.contains(c);
     Rights {
-        read:          has('r'),
-        write:         has('w'),
-        append:        has('a'),
-        execute:       has('x'),
-        delete:        has('d'),
-        read_attr:     has('t'),
-        write_attr:    has('T'),
-        read_xattr:    has('n'),
-        write_xattr:   has('N'),
+        read: has('r'),
+        write: has('w'),
+        append: has('a'),
+        execute: has('x'),
+        delete: has('d'),
+        read_attr: has('t'),
+        write_attr: has('T'),
+        read_xattr: has('n'),
+        write_xattr: has('N'),
         read_security: has('c'),
-        write_security:has('C'),
-        synchronize:   has('y'),
+        write_security: has('C'),
+        synchronize: has('y'),
         ..Default::default()
     }
 }
 
 fn parse_nfs4_inherit(flags: &str) -> InheritFlags {
     InheritFlags {
-        file_inherit:      flags.contains('f'),
-        dir_inherit:       flags.contains('d'),
-        inherit_only:      flags.contains('i'),
-        no_propagate:      flags.contains('n'),
-        inherited:         flags.contains('I'),
+        file_inherit: flags.contains('f'),
+        dir_inherit: flags.contains('d'),
+        inherit_only: flags.contains('i'),
+        no_propagate: flags.contains('n'),
+        inherited: flags.contains('I'),
         ..Default::default()
     }
 }
@@ -382,7 +422,10 @@ fn read_windows(path: &Path, acl: &mut PathAcl) {
         .output();
     let out = match out {
         Ok(o) => o,
-        Err(e) => { acl.error = Some(e.to_string()); return; }
+        Err(e) => {
+            acl.error = Some(e.to_string());
+            return;
+        }
     };
     // icacls uses OEM encoding on Windows; attempt UTF-8 with lossy fallback
     let text = String::from_utf8_lossy(&out.stdout).to_string();
@@ -401,21 +444,23 @@ fn parse_icacls_output(text: &str, acl: &mut PathAcl) {
         if line.trim().is_empty()
             || line.contains("Successfully processed")
             || line.contains("Failed processing")
-        { continue; }
+        {
+            continue;
+        }
 
         // Strip the path prefix from the first line
         let line = if first {
             first = false;
-            // Find first space-separated token that looks like a permission entry
             let trimmed = line.trim();
-            if let Some(pos) = trimmed.find(":(") {
-                // Find where the principal starts (after path)
-                let before = &trimmed[..pos];
-                // Principal is last whitespace-delimited token before ':'
-                before.split_whitespace().next().map(|_| trimmed).unwrap_or(trimmed)
+            if let Some(ace_start) = trimmed.find(":(") {
+                let before_ace = &trimmed[..ace_start];
+                if let Some(last_space) = before_ace.rfind(' ') {
+                    &trimmed[last_space + 1..]
+                } else {
+                    trimmed
+                }
             } else {
-                // The first ACE may be on the same line or only the path
-                if trimmed.contains(':') { trimmed } else { continue }
+                continue;
             }
         } else {
             line.trim()
@@ -429,7 +474,9 @@ fn parse_icacls_ace_line(line: &str, acl: &mut PathAcl) {
     // Format: PRINCIPAL:(INHERIT_FLAGS)(RIGHTS)  or  PRINCIPAL:(RIGHTS)
     // There may be multiple paren groups.
     // Strategy: split on ':(' — everything before is the principal.
-    let Some(colon_paren) = line.find(":(") else { return };
+    let Some(colon_paren) = line.find(":(") else {
+        return;
+    };
     let principal_str = line[..colon_paren].trim();
     let rest = &line[colon_paren + 1..]; // starts with '('
 
@@ -447,18 +494,39 @@ fn parse_icacls_ace_line(line: &str, acl: &mut PathAcl) {
             "CI" => inherit.container_inherit = true,
             "IO" => inherit.inherit_only = true,
             "NP" => inherit.no_propagate = true,
-            "I"  => inherit.inherited = true,
+            "I" => inherit.inherited = true,
             // Rights tokens
-            "F"  => { rights.read = true; rights.write = true; rights.execute = true;
-                       rights.delete = true; rights.read_security = true;
-                       rights.write_security = true; rights.take_ownership = true; }
-            "M"  => { rights.read = true; rights.write = true; rights.execute = true;
-                       rights.delete = true; }
-            "RX" => { rights.read = true; rights.execute = true; }
-            "R"  => { rights.read = true; }
-            "W"  => { rights.write = true; }
-            "D"  => { rights.delete = true; }
-            "DENY" => { allow = false; }
+            "F" => {
+                rights.read = true;
+                rights.write = true;
+                rights.execute = true;
+                rights.delete = true;
+                rights.read_security = true;
+                rights.write_security = true;
+                rights.take_ownership = true;
+            }
+            "M" => {
+                rights.read = true;
+                rights.write = true;
+                rights.execute = true;
+                rights.delete = true;
+            }
+            "RX" => {
+                rights.read = true;
+                rights.execute = true;
+            }
+            "R" => {
+                rights.read = true;
+            }
+            "W" => {
+                rights.write = true;
+            }
+            "D" => {
+                rights.delete = true;
+            }
+            "DENY" => {
+                allow = false;
+            }
             _ => {
                 // Advanced permission list: e.g. (DE,RC,WDAC,...)
                 for part in token.split(',') {
@@ -469,25 +537,31 @@ fn parse_icacls_ace_line(line: &str, acl: &mut PathAcl) {
     }
 
     let principal = parse_windows_principal(principal_str);
-    acl.aces.push(Ace { principal, allow, rights, inherit, is_default: false });
+    acl.aces.push(Ace {
+        principal,
+        allow,
+        rights,
+        inherit,
+        is_default: false,
+    });
 }
 
 fn apply_icacls_advanced_right(part: &str, rights: &mut Rights, allow: &mut bool) {
     match part {
-        "RD"   => rights.read = true,
-        "WD"   => rights.write = true,
-        "AD"   => rights.append = true,
-        "REA"  => rights.read_xattr = true,
-        "WEA"  => rights.write_xattr = true,
-        "X"    => rights.execute = true,
-        "DC"   => rights.delete = true,
-        "RA"   => rights.read_attr = true,
-        "WA"   => rights.write_attr = true,
-        "RC"   => rights.read_security = true,
+        "RD" => rights.read = true,
+        "WD" => rights.write = true,
+        "AD" => rights.append = true,
+        "REA" => rights.read_xattr = true,
+        "WEA" => rights.write_xattr = true,
+        "X" => rights.execute = true,
+        "DC" => rights.delete = true,
+        "RA" => rights.read_attr = true,
+        "WA" => rights.write_attr = true,
+        "RC" => rights.read_security = true,
         "WDAC" => rights.write_security = true,
-        "WO"   => rights.take_ownership = true,
-        "S"    => rights.synchronize = true,
-        "DE"   => rights.delete = true,
+        "WO" => rights.take_ownership = true,
+        "S" => rights.synchronize = true,
+        "DE" => rights.delete = true,
         "DENY" => *allow = false,
         _ => {}
     }
@@ -496,7 +570,8 @@ fn apply_icacls_advanced_right(part: &str, rights: &mut Rights, allow: &mut bool
 fn parse_windows_principal(s: &str) -> Principal {
     if s.starts_with('S') && s.contains('-') {
         Principal::Sid(s.into())
-    } else if s.eq_ignore_ascii_case("everyone") || s.eq_ignore_ascii_case("NT AUTHORITY\\Everyone") {
+    } else if s.eq_ignore_ascii_case("everyone") || s.eq_ignore_ascii_case("NT AUTHORITY\\Everyone")
+    {
         Principal::Everyone
     } else if s.contains('\\') {
         let name = s.split('\\').last().unwrap_or(s);

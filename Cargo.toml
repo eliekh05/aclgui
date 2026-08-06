@@ -4,11 +4,11 @@ resolver = "2"
 
 [package]
 name = "aclgui"
-version = "0.1.0"
-edition = "2021"
+version = "1.0.0"
+edition = "2024"
 description = "Cross-platform ACL & permissions GUI with OS detection, staged changes, and interactive help"
 license = "MIT"
-repository = "https://github.com/eliekhalil/aclgui"
+repository = "https://github.com/eliekh05/aclgui"
 
 [[bin]]
 name = "aclgui"
@@ -16,20 +16,20 @@ path = "src/main.rs"
 
 [dependencies]
 acl-core = { path = "crates/acl-core" }
-eframe = { version = "0.31", default-features = false, features = [
+eframe = { version = "0.36", default-features = false, features = [
     "default_fonts",
     "glow",
     "wayland",
     "x11",
 ] }
-egui = "0.31"
-egui_extras = { version = "0.31", features = ["all_loaders"] }
-rfd = "0.15"
+egui = "0.36"
+egui_extras = { version = "0.36", features = ["all_loaders"] }
+rfd = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = { version = "0.58", features = [
+windows = { version = "0.62", features = [
     "Win32_Security",
     "Win32_Security_Authorization",
     "Win32_Storage_FileSystem",
