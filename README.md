@@ -42,7 +42,7 @@ No internet required. No LLM. Fully rule-based and always accurate to what is lo
 ### From npm (recommended — installs the right prebuilt binary for your platform)
 
 ```sh
-npx @eliekh05/aclgui
+npm -g @eliekh05/aclgui
 aclgui
 ```
 
