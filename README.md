@@ -158,7 +158,7 @@ aclgui/
 
 ## License
 
-MIT
+[MIT](https://github.com/eliekh05/aclgui/blob/main/LICENSE)
 
 ## Acknowledgements
 
