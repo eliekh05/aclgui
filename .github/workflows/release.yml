@@ -57,12 +57,13 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y \
             libgtk-3-dev \
-            libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
-            libspeechd-dev libxkbcommon-dev libssl-dev \
-            gcc-aarch64-linux-gnu \
-            libgtk-3-dev:arm64 \
-            libxcb-render0-dev:arm64 libxcb-shape0-dev:arm64 libxcb-xfixes0-dev:arm64 \
-            libspeechd-dev:arm64 libxkbcommon-dev:arm64 libssl-dev:arm64
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev \
+            libspeechd-dev \
+            libxkbcommon-dev \
+            libssl-dev \
+            gcc-aarch64-linux-gnu
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
