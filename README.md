@@ -159,3 +159,10 @@ aclgui/
 ## License
 
 MIT
+
+## Acknowledgements
+
+- Project author and maintainer: **@eliekh05**
+- Initial development assisted by **Cursor AI**
+- Additional edits and code review assisted by **Claude AI** (using the maintainer's own API credentials)
+- Final implementation, testing, and releases are maintained by **@eliekh05**

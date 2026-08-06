@@ -77,15 +77,19 @@ pub fn draw(app: &mut AclApp, ui: &mut egui::Ui) {
                         }
                     });
                 });
-
-                draw_ace_table(ui, &acl.aces, false, app);
-
-                if !acl.default_aces.is_empty() {
-                    ui.add_space(6.0);
+                if acl.aces.is_empty() && acl.default_aces.is_empty() {
                     ui.label(
-                        egui::RichText::new("Default ACEs (inherited by new items)").italics(),
+                        egui::RichText::new("No ACEs — this path uses mode bits only.").italics(),
                     );
-                    draw_ace_table(ui, &acl.default_aces, true, app);
+                } else {
+                    draw_ace_table(ui, &acl.aces, false, app);
+                    if !acl.default_aces.is_empty() {
+                        ui.add_space(6.0);
+                        ui.label(
+                            egui::RichText::new("Default ACEs (inherited by new items)").italics(),
+                        );
+                        draw_ace_table(ui, &acl.default_aces, true, app);
+                    }
                 }
             });
         }

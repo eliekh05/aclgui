@@ -3,7 +3,7 @@
  * Stamps per-platform npm packages from prebuilt binary artifacts.
  *
  * Usage:
- *   node scripts/npm-stamp.mjs --version=0.1.0 --binaries=dist/binaries [--out=dist/npm]
+ *   node scripts/npm-stamp.mjs --version=1.0.2 --binaries=dist/binaries [--out=dist/npm]
  *
  * Expects the following binary files in --binaries/:
  *   aclgui-darwin-arm64
@@ -99,7 +99,7 @@ function stampMeta({ version, out }) {
     bin:                  { aclgui: 'bin/aclgui.js' },
     files:                ['bin/'],
     engines:              { node: '>=20' },
-    dependencies:         { 'bin-shim': '^0.1.0' },
+    dependencies:         { 'bin-shim': '^1.0.2' },
     optionalDependencies: optDeps,
   }, null, 2));
 
