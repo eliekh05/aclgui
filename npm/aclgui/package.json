@@ -1,6 +1,6 @@
 {
   "name": "@eliekh05/aclgui",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Cross-platform ACL & permissions GUI — Windows, macOS, Linux",
   "keywords": ["acl", "permissions", "security", "gui", "chmod", "icacls", "setfacl"],
   "license": "MIT",
@@ -15,13 +15,13 @@
   "files": ["bin/"],
   "engines": { "node": ">=20" },
   "dependencies": {
-    "bin-shim": "^0.1.4"
+    "bin-shim": "^1.0.0"
   },
   "optionalDependencies": {
-    "@aclgui_eliekh05/darwin-arm64": "0.1.4",
-    "@aclgui_eliekh05/darwin-x64":   "0.1.4",
-    "@aclgui_eliekh05/linux-x64":    "0.1.4",
-    "@aclgui_eliekh05/linux-arm64":  "0.1.4",
-    "@aclgui_eliekh05/win32-x64":    "0.1.4"
+    "@aclgui_eliekh05/darwin-arm64": "1.0.0",
+    "@aclgui_eliekh05/darwin-x64":   "1.0.0",
+    "@aclgui_eliekh05/linux-x64":    "1.0.0",
+    "@aclgui_eliekh05/linux-arm64":  "1.0.0",
+    "@aclgui_eliekh05/win32-x64":    "1.0.0"
   }
 }
