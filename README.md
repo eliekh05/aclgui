@@ -4,6 +4,11 @@ Cross-platform ACL & file permissions GUI for **Windows**, **macOS**, and **Linu
 
 Built with pure Rust + [egui](https://github.com/emilk/egui) — no Electron, no Chromium, no WebView, no bundled runtime. Release binaries are **3–8 MB**.
 
+[![npm](https://img.shields.io/npm/v/@eliekh05/aclgui)](https://www.npmjs.com/package/@eliekh05/aclgui)
+[![Linux CI](https://github.com/eliekh05/aclgui/actions/workflows/Linux.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/Linux.yml)
+[![macOS CI](https://github.com/eliekh05/aclgui/actions/workflows/macOS.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/macOS.yml)
+[![Windows CI](https://github.com/eliekh05/aclgui/actions/workflows/Windows.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/Windows.yml)
+
 ---
 
 ## Features
@@ -42,7 +47,11 @@ No internet required. No LLM. Fully rule-based and always accurate to what is lo
 ### From npm (recommended — installs the right prebuilt binary for your platform)
 
 ```sh
-npm -g @eliekh05/aclgui
+# Run once without installing
+npx @eliekh05/aclgui
+
+# Or install globally
+npm install -g @eliekh05/aclgui
 aclgui
 ```
 
@@ -63,7 +72,7 @@ Download the binary for your platform from [Releases](https://github.com/eliekh0
 ### From source
 
 ```sh
-git clone https://github.com/eliekhalil/aclgui.git
+git clone https://github.com/eliekh05/aclgui.git
 cd aclgui
 cargo build --release
 ./target/release/aclgui
@@ -93,6 +102,8 @@ The GUI uses OS-native command-line tools. Most are pre-installed:
 | `ls`, `stat`, `chmod` | macOS / Linux basic perms | ✔ always |
 | `nfs4_getfacl` / `nfs4_setfacl` | NFSv4 ACLs | install `nfs4-acl-tools` |
 | `pkexec` | Linux elevation | ✔ most Linux distros |
+
+> **Linux display requirement:** aclgui is a GUI application and requires a running X11 or Wayland display server. It will not start on headless servers. Set `DISPLAY` or `WAYLAND_DISPLAY` before running, or use a tool like `Xvfb` for testing.
 
 ---
 
@@ -137,7 +148,9 @@ aclgui/
 │   └── npm-stamp.mjs       # Stamps + publishes per-platform npm packages
 └── .github/
     └── workflows/
-        ├── ci.yml          # PR checks on all 3 OSes
+        ├── Linux.yml       # Linux CI
+        ├── macOS.yml       # macOS CI
+        ├── Windows.yml     # Windows CI
         └── release.yml     # Cross-compile + GitHub Release + npm publish
 ```
 
