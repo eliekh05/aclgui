@@ -203,7 +203,10 @@ pub fn draw_dialog(app: &mut AclApp, ctx: &egui::Context) {
 
             ui.separator();
             ui.horizontal(|ui| {
-                if ui.button("Stage").clicked() {
+                let has_rights = ed.read || ed.write || ed.execute || ed.delete
+                    || ed.append || ed.create_file || ed.create_dir
+                    || ed.read_security || ed.write_security;
+                if ui.add_enabled(has_rights, egui::Button::new("Stage")).clicked() {
                     stage = true;
                 }
                 if ui.button("Cancel").clicked() {

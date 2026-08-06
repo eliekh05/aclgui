@@ -1,6 +1,6 @@
 {
   "name": "@eliekh05/aclgui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cross-platform ACL & permissions GUI — Windows, macOS, Linux",
   "keywords": ["acl", "permissions", "security", "gui", "chmod", "icacls", "setfacl"],
   "license": "MIT",

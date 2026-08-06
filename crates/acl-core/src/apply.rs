@@ -127,6 +127,9 @@ fn ace_to_macos_chmod_spec(ace: &Ace) -> Result<String, String> {
     if ace.inherit.dir_inherit {
         perms.push("directory_inherit");
     }
+    if perms.is_empty() {
+        return Err("Cannot create an ACE with no rights selected.".into());
+    }
     Ok(format!("{principal} {verb} {}", perms.join(",")))
 }
 

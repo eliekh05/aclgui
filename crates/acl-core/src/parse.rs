@@ -38,8 +38,16 @@ pub fn read_path(path: &Path, tools: &ToolAvailability) -> PathAcl {
 
 fn read_posix_mode_only(path: &Path, acl: &mut PathAcl) {
     acl.kind = AclKind::PosixMode;
+
+    // `stat -c` is GNU coreutils (Linux); macOS/BSD use `stat -f`.
+    #[cfg(target_os = "macos")]
+    let stat_args: &[&str] = &["-f", "%p %Su %Sg"];
+    #[cfg(not(target_os = "macos"))]
+    let stat_args: &[&str] = &["-c", "%a %U %G"];
+
     let out = Command::new("stat")
-        .args(["-c", "%a %U %G", path.to_str().unwrap_or("")])
+        .args(stat_args)
+        .arg(path.to_str().unwrap_or(""))
         .output();
     let out = match out {
         Ok(o) => o,
@@ -52,7 +60,14 @@ fn read_posix_mode_only(path: &Path, acl: &mut PathAcl) {
     acl.raw_output = s.to_string();
     let parts: Vec<&str> = s.trim().split_whitespace().collect();
     if let Some(octal_str) = parts.first() {
-        if let Ok(octal) = u32::from_str_radix(octal_str, 8) {
+        // GNU stat -c %a → octal string e.g. "755"
+        // macOS stat -f %p → decimal with file-type bits e.g. "33188"
+        #[cfg(target_os = "macos")]
+        let mode_opt = octal_str.parse::<u32>().ok().map(|v| v & 0o7777);
+        #[cfg(not(target_os = "macos"))]
+        let mode_opt = u32::from_str_radix(octal_str, 8).ok();
+
+        if let Some(octal) = mode_opt {
             acl.posix_mode = Some(PosixMode::from_octal(octal));
         }
     }
