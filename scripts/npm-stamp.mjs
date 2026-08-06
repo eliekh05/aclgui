@@ -99,7 +99,7 @@ function stampMeta({ version, out }) {
     bin:                  { aclgui: 'bin/aclgui.js' },
     files:                ['bin/'],
     engines:              { node: '>=20' },
-    dependencies:         { 'bin-shim': '^1.0.0' },
+    dependencies:         { 'bin-shim': '^0.1.0' },
     optionalDependencies: optDeps,
   }, null, 2));
 
