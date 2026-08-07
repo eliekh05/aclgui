@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout release commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
@@ -28,8 +28,28 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 
+      - name: Ensure Cargo.lock exists and is valid
+        shell: bash
+        run: |
+          cd "$GITHUB_WORKSPACE"
+
+          if [ ! -f Cargo.lock ]; then
+            echo "Cargo.lock missing. Generating..."
+            cargo generate-lockfile
+          else
+            echo "Checking Cargo.lock..."
+
+            if ! cargo check --locked; then
+              echo "Cargo.lock is invalid. Removing and regenerating..."
+              rm -f Cargo.lock
+              cargo generate-lockfile
+            else
+              echo "Cargo.lock is valid."
+            fi
+          fi
+
       - name: Verify package
         run: cargo package
 
       - name: Publish to crates.io
-        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
