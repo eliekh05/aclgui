@@ -33,7 +33,9 @@ pub fn draw(app: &mut AclApp, ctx: &egui::Context) {
             } else {
                 ui.colored_label(egui::Color32::from_rgb(220, 120, 60), "⚠ Not elevated");
                 if ui.button("Re-launch as admin").clicked() {
-                    if let Err(e) = crate::elevation::relaunch_elevated() {
+                    let path = app.current_path.as_ref()
+                        .map(|p| p.to_string_lossy().into_owned());
+                    if let Err(e) = crate::elevation::relaunch_elevated(path.as_deref()) {
                         app.status = format!("Elevation failed: {e}");
                     }
                 }

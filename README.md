@@ -24,21 +24,8 @@ Built with pure Rust + [egui](https://github.com/emilk/egui) — no Electron, no
 | ACE editor (add / edit / remove entries) | ✔ | ✔ | ✔ |
 | Inheritance controls | ✔ | ✔ | ✔ |
 | Elevation prompt (UAC / pkexec / osascript) | ✔ | ✔ | ✔ |
-| Interactive Help Chat | ✔ | ✔ | ✔ |
 | Raw output view | ✔ | ✔ | ✔ |
 | OS detection + tool probing | ✔ | ✔ | ✔ |
-
-### Surprise: Interactive Help Chat
-
-The built-in chat panel answers plain-English questions about the currently loaded path:
-
-- *"Why can't alice write here?"* → inspects deny ACEs, POSIX mask, mode bits, Windows SYNCHRONIZE trap
-- *"What does inherit mean?"* → OS-specific answer
-- *"How do I add a group?"* → step-by-step for the current OS
-- *"What is the mask?"* → explains POSIX ACL mask and how to fix it
-- *"What is Synchronize on Windows?"* → explains the icacls/Explorer mismatch
-
-No internet required. No LLM. Fully rule-based and always accurate to what is loaded.
 
 ---
 
@@ -86,8 +73,7 @@ cargo build --release
 2. **View permissions** — the Permissions tab shows POSIX mode bits and all ACE entries.
 3. **Edit** — click **Add ACE** or the edit/delete buttons on existing entries. Changes are staged, not applied immediately.
 4. **Review** — switch to the Staged tab to see a diff of pending changes.
-5. **Apply** — click Apply. If the process is not elevated, it re-launches with admin privileges automatically (UAC on Windows, pkexec on Linux, osascript on macOS).
-6. **Ask for help** — open the Help Chat tab and ask anything about the loaded path.
+5. **Apply** — click Apply. If the process is not elevated, it automatically relaunches with admin privileges and reopens the same path — no need to pick again.
 
 ---
 
@@ -107,13 +93,12 @@ The GUI uses OS-native command-line tools. Most are pre-installed:
 
 ---
 
-## Known limitations
+## Notes
 
-- **POSIX ACL mask**: The POSIX mask silently caps named user/group permissions. The GUI warns you when the mask restricts effective rights. Use the Help Chat for guidance.
-- **Windows icacls SYNCHRONIZE trap**: icacls silently adds SYNCHRONIZE when denying certain rights, which locks out Explorer. The GUI uses the Win32 API where possible and warns on DENY ACEs that would imply this.
-- **NFSv4**: Available as view + validated text roundtrip. The server must support full NFSv4 ACLs; not all NFS servers do.
-- **macOS SIP / TCC**: System-protected paths cannot be edited by any user-mode tool.
-- **No recursive apply yet**: Changes apply to the selected path only. Recursive support is planned.
+- **POSIX ACL mask**: The POSIX mask caps effective rights for named users and groups even when their ACE says Allow. The GUI shows the effective rights in the ACE table. To raise the mask, change it to match the highest rights you intend to grant.
+- **Windows SYNCHRONIZE**: Denying certain rights via icacls implicitly adds SYNCHRONIZE, which blocks Explorer. aclgui warns you on DENY ACEs that would trigger this.
+- **macOS SIP / TCC**: Apple-system paths under `/System`, `/usr`, and similar are protected at the kernel level and cannot be modified by any user-mode tool regardless of privilege.
+- **NFSv4**: Requires `nfs4_getfacl` / `nfs4_setfacl` to be installed and the mount to support full NFSv4 ACLs.
 
 ---
 
@@ -130,7 +115,6 @@ aclgui/
 │       ├── top_bar.rs
 │       ├── permissions_panel.rs
 │       ├── ace_editor.rs
-│       ├── chat_panel.rs
 │       ├── staged_panel.rs
 │       └── raw_panel.rs
 ├── crates/
@@ -140,18 +124,18 @@ aclgui/
 │           ├── model.rs    # Unified ACL data model
 │           ├── os_detect.rs
 │           ├── parse.rs    # OS-native parsers
-│           ├── apply.rs    # OS-native appliers
-│           └── chatbot.rs  # Rule-based help chat
+│           └── apply.rs    # OS-native appliers
 ├── npm/
 │   └── aclgui/             # npm metapackage (bin-shim wrapper)
 ├── scripts/
 │   └── npm-stamp.mjs       # Stamps + publishes per-platform npm packages
 └── .github/
     └── workflows/
-        ├── Linux.yml       # Linux CI
-        ├── macOS.yml       # macOS CI
-        ├── Windows.yml     # Windows CI
-        └── release.yml     # Cross-compile + GitHub Release + npm publish
+        ├── bump-version.yml  # Run manually: bumps version, commits, tags, triggers release
+        ├── Linux.yml         # Linux CI
+        ├── macOS.yml         # macOS CI
+        ├── Windows.yml       # Windows CI
+        └── release.yml       # Cross-compile + GitHub Release + npm publish (triggered by tag)
 ```
 
 ---

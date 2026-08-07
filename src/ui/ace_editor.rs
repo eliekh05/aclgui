@@ -7,6 +7,7 @@ pub struct AceEditorState {
     pub mode: AceEditorMode,
     pub edit_index: usize,
     pub is_default: bool,
+    pub is_dir: bool,
 
     // Fields
     pub principal_kind: PrincipalKind,
@@ -44,18 +45,20 @@ pub enum PrincipalKind {
 }
 
 impl AceEditorState {
-    pub fn open_add(&mut self) {
+    pub fn open_add(&mut self, is_dir: bool) {
         *self = AceEditorState::default();
         self.open = true;
         self.allow = true;
+        self.is_dir = is_dir;
     }
 
-    pub fn open_edit(&mut self, index: usize, ace: Ace, default: bool) {
+    pub fn open_edit(&mut self, index: usize, ace: Ace, default: bool, is_dir: bool) {
         *self = AceEditorState::default();
         self.open = true;
         self.mode = AceEditorMode::Edit;
         self.edit_index = index;
         self.is_default = default;
+        self.is_dir = is_dir;
         self.allow = ace.allow;
 
         match ace.principal {
@@ -188,18 +191,20 @@ pub fn draw_dialog(app: &mut AclApp, ctx: &egui::Context) {
                 });
             });
 
-            ui.group(|ui| {
-                ui.label("Inheritance");
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut ed.file_inherit, "File inherit");
-                    ui.checkbox(&mut ed.dir_inherit, "Dir inherit");
-                    ui.checkbox(&mut ed.inherit_only, "Inherit only");
+            if ed.is_dir {
+                ui.group(|ui| {
+                    ui.label("Inheritance");
+                    ui.horizontal(|ui| {
+                        ui.checkbox(&mut ed.file_inherit, "File inherit");
+                        ui.checkbox(&mut ed.dir_inherit, "Dir inherit");
+                        ui.checkbox(&mut ed.inherit_only, "Inherit only");
+                    });
+                    ui.checkbox(
+                        &mut ed.is_default_ace,
+                        "Default ACE (Linux/NFSv4 directories)",
+                    );
                 });
-                ui.checkbox(
-                    &mut ed.is_default_ace,
-                    "Default ACE (Linux/NFSv4 directories)",
-                );
-            });
+            }
 
             ui.separator();
             ui.horizontal(|ui| {

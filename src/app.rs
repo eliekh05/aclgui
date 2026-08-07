@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use acl_core::{
-    ChatMessage, ChangeSet, PathAcl, ToolAvailability,
-    answer, apply_changes, read_path, probe_tools,
+    ChangeSet, PathAcl, ToolAvailability,
+    apply_changes, read_path, probe_tools,
 };
 
 use crate::ui;
@@ -11,7 +11,6 @@ use crate::ui;
 #[derive(PartialEq, Eq)]
 pub enum Panel {
     Permissions,
-    Chat,
     Staged,
     Raw,
 }
@@ -31,10 +30,6 @@ pub struct AclApp {
     // Apply result
     pub apply_result: Option<Result<String, String>>,
 
-    // Chat panel
-    pub chat_history: Vec<ChatMessage>,
-    pub chat_input: String,
-
     // UI state
     pub panel: Panel,
     pub status: String,
@@ -53,12 +48,6 @@ impl AclApp {
             tools,
             staged: ChangeSet::default(),
             apply_result: None,
-            chat_history: vec![ChatMessage {
-                from_user: false,
-                text: "Hi! I'm your ACL assistant. Select a file or directory, then ask me \
-                       anything — e.g. \"why can't alice write here?\" or \"what is the mask?\"".into(),
-            }],
-            chat_input: String::new(),
             panel: Panel::Permissions,
             status: String::new(),
             ace_editor: ui::ace_editor::AceEditorState::default(),
@@ -100,26 +89,24 @@ impl AclApp {
 
     pub fn apply_staged(&mut self) {
         if !self.tools.is_elevated {
-            self.apply_result = Some(Err(
-                "Elevation required. Re-launch with administrator / sudo privileges.".into()
-            ));
+            let path = self.current_path.as_ref()
+                .map(|p| p.to_string_lossy().into_owned());
+            match crate::elevation::relaunch_elevated(path.as_deref()) {
+                Ok(_) => {} // process will exit
+                Err(e) => {
+                    self.apply_result = Some(Err(format!(
+                        "Could not elevate: {e}. Try using 'Re-launch as admin' in the top bar."
+                    )));
+                }
+            }
             return;
         }
         let result = apply_changes(&self.staged, &self.tools);
         self.apply_result = Some(result);
-        // Re-read after apply
         if let Some(path) = self.current_path.clone() {
             self.load_path(path);
         }
         self.staged.changes.clear();
-    }
-
-    pub fn send_chat(&mut self) {
-        let input = std::mem::take(&mut self.chat_input).trim().to_string();
-        if input.is_empty() { return; }
-        self.chat_history.push(ChatMessage { from_user: true, text: input.clone() });
-        let reply = answer(&input, self.acl.as_ref());
-        self.chat_history.push(ChatMessage { from_user: false, text: reply });
     }
 }
 

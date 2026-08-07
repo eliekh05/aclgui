@@ -1,0 +1,75 @@
+name: Bump Version & Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-edit (for cargo set-version)
+        run: cargo install cargo-edit --locked
+
+      - name: Get current version from Cargo.toml
+        id: current
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Compute next version
+        id: next
+        run: |
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${{ steps.current.outputs.version }}"
+          case "${{ inputs.bump }}" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+          echo "version=${MAJOR}.${MINOR}.${PATCH}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump Cargo.toml versions
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          # Root crate
+          cargo set-version "$NEW"
+          # acl-core crate
+          cargo set-version -p acl-core "$NEW"
+
+      - name: Bump npm/aclgui/package.json
+        run: |
+          NEW="${{ steps.next.outputs.version }}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$NEW\"/" npm/aclgui/package.json
+
+      - name: Commit version bump
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Cargo.toml Cargo.lock crates/acl-core/Cargo.toml npm/aclgui/package.json
+          git commit -m "chore: bump version to v${{ steps.next.outputs.version }}"
+          git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag "v${{ steps.next.outputs.version }}"
+          git push origin "v${{ steps.next.outputs.version }}"

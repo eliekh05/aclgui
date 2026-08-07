@@ -67,32 +67,30 @@ pub fn draw(app: &mut AclApp, ui: &mut egui::Ui) {
         }
 
         // ── ACE table ─────────────────────────────────────────────────
-        if !acl.aces.is_empty() || !acl.default_aces.is_empty() {
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(egui::RichText::new("Access Control Entries").strong());
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("➕ Add ACE").clicked() {
-                            app.ace_editor.open_add();
-                        }
-                    });
-                });
-                if acl.aces.is_empty() && acl.default_aces.is_empty() {
-                    ui.label(
-                        egui::RichText::new("No ACEs — this path uses mode bits only.").italics(),
-                    );
-                } else {
-                    draw_ace_table(ui, &acl.aces, false, app);
-                    if !acl.default_aces.is_empty() {
-                        ui.add_space(6.0);
-                        ui.label(
-                            egui::RichText::new("Default ACEs (inherited by new items)").italics(),
-                        );
-                        draw_ace_table(ui, &acl.default_aces, true, app);
+        ui.group(|ui| {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new("Access Control Entries").strong());
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.button("➕ Add ACE").clicked() {
+                        app.ace_editor.open_add(acl.is_dir);
                     }
-                }
+                });
             });
-        }
+            if acl.aces.is_empty() && acl.default_aces.is_empty() {
+                ui.label(
+                    egui::RichText::new("No ACEs — this path uses mode bits only. Use ➕ Add ACE to create one.").italics(),
+                );
+            } else {
+                draw_ace_table(ui, &acl.aces, false, app);
+                if !acl.default_aces.is_empty() {
+                    ui.add_space(6.0);
+                    ui.label(
+                        egui::RichText::new("Default ACEs (inherited by new items)").italics(),
+                    );
+                    draw_ace_table(ui, &acl.default_aces, true, app);
+                }
+            }
+        });
 
         // ── Apply result ──────────────────────────────────────────────
         if let Some(ref result) = app.apply_result {
@@ -205,7 +203,8 @@ fn draw_ace_table(ui: &mut egui::Ui, aces: &[Ace], default: bool, app: &mut AclA
             // Actions
             ui.horizontal(|ui| {
                 if ui.small_button("✏").clicked() {
-                    app.ace_editor.open_edit(i, ace.clone(), default);
+                    let is_dir = app.acl.as_ref().map(|a| a.is_dir).unwrap_or(false);
+                    app.ace_editor.open_edit(i, ace.clone(), default, is_dir);
                 }
                 if ui.small_button("🗑").clicked() {
                     remove_idx = Some(i);
