@@ -45,6 +45,11 @@ aclgui
 
 No postinstall scripts. npm installs only the matching platform sub-package via `optionalDependencies`. The shim launches the native binary directly.
 
+### Install with Cargo (with --git option)
+
+```bash
+cargo install --git https://github.com/eliekh05/aclgui.git
+```
 ### From GitHub Releases
 
 Download the binary for your platform from [Releases](https://github.com/eliekh05/aclgui/releases) and run it directly. No installation required.
