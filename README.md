@@ -137,7 +137,6 @@ aclgui/
 │   └── npm-stamp.mjs       # Stamps + publishes per-platform npm packages
 └── .github/
     └── workflows/
-        ├── bump-version.yml  # Run manually: bumps version, commits, tags, triggers release
         ├── Linux.yml         # Linux CI
         ├── macOS.yml         # macOS CI
         ├── Windows.yml       # Windows CI
