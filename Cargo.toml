@@ -4,7 +4,7 @@ resolver = "2"
 
 [package]
 name = "aclgui"
-version = "1.0.3"
+version = "1.0.4"
 edition = "2021"
 description = "Cross-platform ACL & permissions GUI with OS detection, staged changes, and interactive help"
 license = "MIT"
