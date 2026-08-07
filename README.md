@@ -8,6 +8,7 @@ Built with pure Rust + [egui](https://github.com/emilk/egui) — no Electron, no
 [![Linux CI](https://github.com/eliekh05/aclgui/actions/workflows/Linux.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/Linux.yml)
 [![macOS CI](https://github.com/eliekh05/aclgui/actions/workflows/macOS.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/macOS.yml)
 [![Windows CI](https://github.com/eliekh05/aclgui/actions/workflows/Windows.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/Windows.yml)
+[![Release](https://github.com/eliekh05/aclgui/actions/workflows/release.yml/badge.svg)](https://github.com/eliekh05/aclgui/actions/workflows/release.yml)
 
 ---
 
